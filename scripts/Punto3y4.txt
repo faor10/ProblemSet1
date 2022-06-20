@@ -1,0 +1,65 @@
+##PUNTO 3##
+
+##How good is this model in sample fit?
+##Para esto debemos hacer la regresión y ver el R-cuadrado
+reg1<-(income~Age+Age2,datos)
+
+##Plot the predicted age-earnings profile implied by the above equation
+y=predict(reg1,newdata=list(x=seq(from=1,to=15,length.out=1000)),
+          interval="confidence")
+
+matlines(x,y, lwd=2) 
+
+plot(x=predict(reg1), y=db$Age,
+     xlab='Predicted Values',
+     ylab='Actual Values',
+     main='Predicted vs. Actual Values')
+
+##What is the “peak age” suggested by the above equation? Use bootstrap to
+##calculate the standard errors and construct the confidence intervals.
+
+##Para sacar Peak age toca derivar e igualar a 0 (derivada=B1+2B2AGE)
+Peak_Age=-B1/2B2
+
+##Usa bootstap para calcular se y construir IDC
+mean_age<-mean(datos$age)
+elast_ingreso_edad<-B1+2*B2*mean_age ##para comprobar que el bootstrap esta bien
+
+eta_mod1.fn<-function(data,index,
+                      mean_age=mean(datos$age)){
+  reg2<-(ingreso~mean_age+mean_age2, data, subset = index)
+  coefs<-f$coefficients
+  b1<-coefs[2]
+  b2<-coefs[3]
+  elastpt<-b1+2*b2*mean_age
+  return(elast)
+}
+
+results <- boot(data=gas, eta_mod1.fn,R=1000)
+results
+
+##Intervalos de confianza
+boot.ci(boot.out = bootstrap,
+        type = c("norm", "basic",
+                 "perc", "bca"))
+
+quantile(eta_mod1.fn, c(0.025, 0.975))
+
+##PUNTO 4##
+##Estimate the unconditional earnings gap
+datos<- datos %>% mutate(mujer <- ifelse(datos$genero == 'Mujer', 1, 0))
+datos<-datos %>% mutate(log_ingreso<-log(datos$ingreso))
+reg3<-lm(log_ingreso~mujer,data)
+
+##How should we interpret the β2 coefficient? How good is this model in sample
+##fit?
+##El modelo Log-Nivel se conoce como la semielasticidad de Y respecto a X. Se interpreta como un incremento de 1 unidad en X es asociado a un cambio en Y de (100·β1 )%. 
+##En este caso, el coeficiente asociado a la variable dummy indica una diferencia salarial porcentual entre ambos grupos. Es decir, las personas del sector servicio ganan en promedio 23.95% menos que los trabajadores de otros sectores, controlando por las variables del modelo y manteniendo constante los factores externos. 
+
+## Estimate and plot the predicted age-earnings profile by gender. Do men and
+##women in Bogota have the same intercept and slopes?
+reg4<-lm(income~Age+Age2+mujer,datos)
+
+##What is the implied “peak age” by gender?. Use bootstrap to calculate the
+##standard errors and construct the confidence intervals. Do these confidence
+##intervals overlap? (Si es mujer, derivada = B1
