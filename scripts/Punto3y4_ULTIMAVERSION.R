@@ -71,4 +71,21 @@ db_imputado<-db_imputado %>% mutate(log_ingreso=log(db_imputado$ingtot))
 mod_3<-lm(log_ingreso~mujer,db_imputado)
 mod_3
 
+##Estimate and plot the predicted age-earnings profile by gender. Do men and
+##women in Bogota have the same intercept and slopes?
+mod_4<-lm(log_ingreso~age+age2+mujer,db_imputado)
+mod_4
+stargazer(mod_4,type="text",title="Regresión ingresos-edad-genero", out="mod_4.txt")
 
+mod_5<-lm(ingtot~age+age2+mujer,db_imputado)
+mod_5
+stargazer(mod_5,type="text",title="Regresión lineal ingresos-edad-genero", out="mod_5.txt")
+
+plot(x=db_imputado$age, y=predict(mod_4),
+     xlab='edad',
+     ylab='valores predichos',
+     main='Ingreso predicho vs Edad (por genero)')
+lines(sort(db_imputado$age),                 # Draw polynomial regression curve
+      fitted(mod_4)[order(db_imputado$age)],
+      col = "blue",
+      type = "l")
