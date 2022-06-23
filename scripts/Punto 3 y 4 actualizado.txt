@@ -1,6 +1,8 @@
 ##PUNTO 3##
-require(tidyverse)
 install.packages("stargazer")
+install.packages("pacman")
+install.packages("tidyverse")
+require(tidyverse)
 require(stargazer)
 require(pacman)
 ##How good is this model in sample fit?
@@ -70,6 +72,7 @@ db_imputado<- db_imputado %>% mutate(mujer = ifelse(db_imputado$sex == 0, 1, 0))
 db_imputado<-db_imputado %>% mutate(log_ingreso=log(db_imputado$ingtot))
 mod_3<-lm(log_ingreso~mujer,db_imputado)
 mod_3
+stargazer(mod_3,type="text",title="Regresión ingresos-mujer", out="mod_3.txt")
 
 ##Estimate and plot the predicted age-earnings profile by gender. Do men and
 ##women in Bogota have the same intercept and slopes?
@@ -79,13 +82,62 @@ stargazer(mod_4,type="text",title="Regresión ingresos-edad-genero", out="mod_4.
 
 mod_5<-lm(ingtot~age+age2+mujer,db_imputado)
 mod_5
-stargazer(mod_5,type="text",title="Regresión lineal ingresos-edad-genero", out="mod_5.txt")
+stargazer(mod_5,type="text",title="Regresión lineal ingresos-edad-genero 2", out="mod_5.txt")
 
-plot(x=db_imputado$age, y=predict(mod_4),
-     xlab='edad',
-     ylab='valores predichos',
-     main='Ingreso predicho vs Edad (por genero)')
-lines(sort(db_imputado$age),                 # Draw polynomial regression curve
-      fitted(mod_4)[order(db_imputado$age)],
-      col = "blue",
-      type = "l")
+db_imputado<- db_imputado %>% mutate(mujer_age = mujer*age)
+mod_6<-lm(log_ingreso~age+age2+mujer+mujer_age,db_imputado)
+mod_6
+stargazer(mod_6,type="text",title="Regresión lineal ingresos-edad-genero-edad*genero", out="mod_6.txt")
+
+
+ggplot(data = db_imputado, aes(x = age, y = predict(mod_6))) +
+  geom_point(aes(shape = factor(mujer))) +
+  geom_point(aes(color = factor(mujer))) +
+  geom_smooth(method = lm(log_ingreso~age+age2+mujer+mujer_age,db_imputado), 
+              se = FALSE, 
+              aes(color = factor(mujer))) +
+  labs(title = "Regresión Log ingreso vs Edad (por genero)",
+       x = "Edad",
+       y = "Ingreso (log ingreso)")
+
+##What is the implied “peak age” by gender?. Use bootstrap to calculate the
+##standard errors and construct the confidence intervals. Do these confidence
+##intervals overlap?
+coefs1<-mod_6$coef
+coefs1
+b_1<-coefs1[2]
+b_2<-coefs1[3]
+b_3<-coefs1[4]
+b_4<-coefs1[5]
+
+##Para sacar Peak age por genero nos toca derivar e igualar a 0 (derivada=B1+2B2AGE+B4Mujer)
+b_1
+b_2
+b_3
+b_4
+Peakage_mujer=(-b_1-b_4)/(2*b_2)
+Peakage_mujer
+Peakage_hombre=(-b_1)/(2*b_2)
+Peakage_hombre
+
+##Usa bootstap para calcular Error estándar y construir IDC
+##En el caso de las mujeres:
+mean_age<-mean(db_imputado$age)
+elast_ingreso_edad<-b1+2*b2*mean_age ##para comprobar que el bootstrap esta bien
+elast_ingreso_edad
+
+eta_mod1.fn<-function(data,index,
+                      mean_age=mean(db_imputado$age), 
+                      mean_age2=mean(db_imputado$age2)){
+  mod_2<-lm(ingtot~age+age2, db_imputado, subset = index)
+  coefs<-mod_2$coefficients
+  B1<-coefs[2]
+  B2<-coefs[3]
+  elastpt<-B1+2*B2*mean_age
+  return(elastpt)
+}
+
+require(boot)
+results<-boot(data=db_imputado, eta_mod1.fn,R=1000)
+results
+elast_ingreso_edad
