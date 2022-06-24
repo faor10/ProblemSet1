@@ -121,23 +121,70 @@ Peakage_hombre=(-b_1)/(2*b_2)
 Peakage_hombre
 
 ##Usa bootstap para calcular Error estándar y construir IDC
-##En el caso de las mujeres:
-mean_age<-mean(db_imputado$age)
-elast_ingreso_edad<-b1+2*b2*mean_age ##para comprobar que el bootstrap esta bien
-elast_ingreso_edad
 
-eta_mod1.fn<-function(data,index,
-                      mean_age=mean(db_imputado$age), 
-                      mean_age2=mean(db_imputado$age2)){
-  mod_2<-lm(ingtot~age+age2, db_imputado, subset = index)
+##En el caso de las mujeres:
+meanage_women<-mean(db_imputado[db_imputado$mujer = 1, "age"])
+by(data = db_imputado$age, INDICES = db_imputado$mujer, FUN = mean)
+mean_edad_mujer<-mean(db_imputado$age [db_imputado$mujer==1] , na.rm = TRUE)
+mean_edad_hombre<-mean(db_imputado$age [db_imputado$mujer==0] , na.rm = TRUE)
+elast_ingreso_edad_mujer<-b_1+2*b_2*mean_edad_mujer+b_4 ##para comprobar que el bootstrap esta bien
+elast_ingreso_edad_mujer
+
+eta_mod2.fn<-function(data,index,
+                      mean_edad_mujer=mean(db_imputado$age [db_imputado$mujer==1] , na.rm = TRUE), 
+                      mean_edad2_mujer=mean(db_imputado$age2 [db_imputado$mujer==1] , na.rm = TRUE)){
+  mod_2<-lm(log_ingreso~age+age2+mujer+mujer_age, db_imputado, subset = index)
   coefs<-mod_2$coefficients
   B1<-coefs[2]
   B2<-coefs[3]
-  elastpt<-B1+2*B2*mean_age
-  return(elastpt)
+  B4<-coefs[5]
+  elastpt_edad_mujer<-B1+2*B2*mean_edad_mujer+B4
+  return(elastpt_edad_mujer)
 }
 
 require(boot)
-results<-boot(data=db_imputado, eta_mod1.fn,R=1000)
-results
-elast_ingreso_edad
+results_1<-boot(data=db_imputado, eta_mod2.fn,R=1000)
+results_1
+elast_ingreso_edad_mujer
+
+##En el caso de los hombres:
+
+mean_edad_hombre<-mean(db_imputado$age [db_imputado$mujer==0] , na.rm = TRUE)
+mean_edad_hombre
+elast_ingreso_edad_hombre<-b_1+2*b_2*mean_edad_hombre ##para comprobar que el bootstrap esta bien
+elast_ingreso_edad_hombre
+
+eta_mod3.fn<-function(data,index,
+                      mean_edad_hombre=mean(db_imputado$age [db_imputado$mujer==0] , na.rm = TRUE), 
+                      mean_edad2_hombre=mean(db_imputado$age2 [db_imputado$mujer==0] , na.rm = TRUE)){
+  mod_2<-lm(log_ingreso~age+age2+mujer+mujer_age, db_imputado, subset = index)
+  coefs<-mod_2$coefficients
+  B1<-coefs[2]
+  B2<-coefs[3]
+  B4<-coefs[5]
+  elastpt_edad_hombre<-B1+2*B2*mean_edad_hombre
+  return(elastpt_edad_hombre)
+}
+
+require(boot)
+results_2<-boot(data=db_imputado, eta_mod3.fn,R=1000)
+results_2
+elast_ingreso_edad_hombre
+
+##Intervalos de confianza
+
+boot.ci(results,conf=0.95,
+        type = c("norm", "basic",
+                 "perc", "bca"))
+
+quantile(results, c(0.025, 0.975))
+
+##Equal Pay for Equal Work? A common slogan is “equal pay for equal work”.
+##One way to interpret this is that for employees with similar worker and job
+##characteristics, no gender earnings gap should exist. Estimate a conditional
+##earnings gap that incorporates control variables such as similar worker and job
+##characteristics (X).
+
+##(a) Estimate the conditional earnings gap log(Income) = β1 + β2 Female + θX + u
+
+mod_7<-lm(log_ingreso~mujer+, db_imputado, subset = index))
