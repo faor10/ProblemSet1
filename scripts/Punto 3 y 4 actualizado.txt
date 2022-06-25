@@ -186,5 +186,14 @@ quantile(results, c(0.025, 0.975))
 ##characteristics (X).
 
 ##(a) Estimate the conditional earnings gap log(Income) = β1 + β2 Female + θX + u
-
+summary(db_imputado$p6240) ##¿en que actividad ocupó...... la mayor parte del tiempo la semana pasada? 
+##a.Trabajando b. Buscando trabajo c.Estudiando d. Oficios del hogar e.Incapacitado permanente para trabajar f.Otra actividad 
+factor(db_imputado$p6240, 
+       levels = c(1,2,3,4,5,6),
+       labels = c("trabajando", "buscando trabajo", "estudiando", "oficios del hogar","incapacitado permanente","otra actividad"))
+db_imputado %>% 
+  rename(
+    actividad = p6240 
+  )
+summary(db_imputado$actividad)
 mod_7<-lm(log_ingreso~mujer+, db_imputado, subset = index))
