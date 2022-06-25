@@ -42,6 +42,7 @@ mean_age<-mean(db_imputado$age)
 elast_ingreso_edad<-b1+2*b2*mean_age ##para comprobar que el bootstrap esta bien
 elast_ingreso_edad
 
+
 eta_mod1.fn<-function(data,index,
                       mean_age=mean(db_imputado$age), 
                       mean_age2=mean(db_imputado$age2)){
@@ -53,17 +54,18 @@ eta_mod1.fn<-function(data,index,
   return(elastpt)
 }
 
+
 require(boot)
 results<-boot(data=db_imputado, eta_mod1.fn,R=1000)
 results
 elast_ingreso_edad
 
 ##Intervalos de confianza
+SE_1<-1449.747*1.96
+IDC1_lowerbound<-elast_ingreso_edad-SE_1
+IDC1_upperbound<-elast_ingreso_edad+SE_1
+print(c(IDC1_lowerbound,IDC1_upperbound))
 
-boot.ci(results,conf=0.95,
-        type = c("norm", "basic",
-                 "perc", "bca"))
-quantile(results, c(0.025, 0.975))
 
 ##PUNTO 4##
 
@@ -172,12 +174,17 @@ results_2
 elast_ingreso_edad_hombre
 
 ##Intervalos de confianza
+##Mujeres:
+SE_2<-0.002177814*1.96
+IDC2_lowerbound<-elast_ingreso_edad_mujer-SE_2
+IDC2_upperbound<-elast_ingreso_edad_mujer+SE_2
+print(c(IDC2_lowerbound,IDC2_upperbound))
 
-boot.ci(results,conf=0.95,
-        type = c("norm", "basic",
-                 "perc", "bca"))
-
-quantile(results, c(0.025, 0.975))
+##Hombres:
+SE_3<-0.001520186*1.96
+IDC3_lowerbound<-elast_ingreso_edad_hombre-SE_3
+IDC3_upperbound<-elast_ingreso_edad_hombre+SE_3
+print(c(IDC3_lowerbound,IDC3_upperbound))
 
 ##Equal Pay for Equal Work? A common slogan is “equal pay for equal work”.
 ##One way to interpret this is that for employees with similar worker and job
@@ -186,14 +193,29 @@ quantile(results, c(0.025, 0.975))
 ##characteristics (X).
 
 ##(a) Estimate the conditional earnings gap log(Income) = β1 + β2 Female + θX + u
-summary(db_imputado$p6240) ##¿en que actividad ocupó...... la mayor parte del tiempo la semana pasada? 
-##a.Trabajando b. Buscando trabajo c.Estudiando d. Oficios del hogar e.Incapacitado permanente para trabajar f.Otra actividad 
-factor(db_imputado$p6240, 
-       levels = c(1,2,3,4,5,6),
-       labels = c("trabajando", "buscando trabajo", "estudiando", "oficios del hogar","incapacitado permanente","otra actividad"))
-db_imputado %>% 
-  rename(
-    actividad = p6240 
-  )
-summary(db_imputado$actividad)
-mod_7<-lm(log_ingreso~mujer+, db_imputado, subset = index))
+summary(db_imputado$oficio) 
+
+mod_7<-lm(log_ingreso~ mujer+oficio, db_imputado)
+mod_7
+
+##Use FWL to repeat the above estimation, where the interest lies on β2. Do you obtain the same estimates?
+
+##USAMOS RESIDUALES PARA ENCONTRAR COEFICIENTE CON FWL
+r1 = residuals(lm(log_ingreso~ oficio, db_imputado))
+r2 = residuals (lm(mujer~oficio, db_imputado))
+# ols
+coef(lm(log_ingreso~ mujer+oficio, db_imputado))
+# FWL ols
+coef(lm(r1 ~ -1 + r2))
+
+##How should we interpret the β2 coefficient? How good is this model in
+##sample fit? Is the gap reduced? Is this evidence that the gap is a selection problem and not a ”discrimination problem”?
+
+mod_7
+stargazer(mod_7,type="text",title="Regresión log-lin ingresos-genero-actividad", out="mod_7.txt")
+mod_3
+##El coeficiente B2 se interpreta como que manteniendo las demás variables constantes, el log ingreso de las mujeres es en promedio 35,8% menor al de los hombres.
+## El R2 de la regresión es 11,1%, por lo que se podría decir que existe un alto margen para mejorar el ajuste de la muestra
+## A comparación del mod_3, en el mod_7 se disminuye ligeramente la brecha entre los ingresos por genero. 
+## Esto podría considerarse como que la brecha de ingresos entre genero si puede relacionarse con un problema de selección de las variables explicativas del modelo, pero así mismo también es un problema de discriminación porque en todas las regresiones realizadas las mujeres tienen un menor salario.
+
