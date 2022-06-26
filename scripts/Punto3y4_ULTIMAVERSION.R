@@ -11,17 +11,27 @@ require(pacman)
 ##3.1, 3.2 y 3.3 How good is this model in sample fit? 
 
 summary(db_imputado$ingtot) ##ingtot fue la variable escogida 
+hist(db_imputado$ingtot, col='steelblue', main='Normal') ##Histograma de la variable ingtot para mirar su distribución
+ggplot(data = db_imputado , mapping = aes(x = age , y = ingtot)) +
+  geom_point(col = "blue" , size = 0.5) + ggtitle("Ingresos totales vs Edad") ##Gráfica de dispersión para mirar relación lineal de ingresos totales y edad
+
 db_imputado<- db_imputado %>% mutate(age2 = age^2)
-mod_1<-lm(ingtot~age+age2,db_imputado)
+mod_1<-lm(ingtot~age+age2,db_imputado) ##Modelo de regresión 1
 summary(mod_1) 
 stargazer(mod_1,type="text",title="Regresión ingresos-edad", out="mod1_ingresos-edad.txt")
 res <- resid(mod_1)
 
-#produce residual vs. fitted plot
+#producir residual vs. fitted plot
 plot(fitted(mod_1), res)
 
 #add a horizontal line at 0 
 abline(0,0)
+
+#Q-Q plot for residuals
+qqnorm(res)
+
+#add a straight diagonal line to the plot
+qqline(res)
 
 ##3.4 Plot the predicted age-earnings profile implied by the above equation
 plot(x=db_imputado$age, y=predict(mod_1),
