@@ -1,6 +1,4 @@
-# MeCA
-# Big Data
-# Solución del ProblemSet1
+# MeCA - Big Data - Solución del ProblemSet1
 
 En este repositorio se presenta la solución del ProblemSet1 realizado por Carlos Avilán y Francisco Ortiz.
 
