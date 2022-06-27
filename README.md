@@ -1,11 +1,11 @@
-#MeCA
-#Big Data
-#Solución del ProblemSet1
+# MeCA
+# Big Data
+# Solución del ProblemSet1
 
 En este repositorio se presenta la solución del ProblemSet1 realizado por Carlos Avilán y Francisco Ortiz.
 
 
-El repositorio se divide en 4 carpetas:
+## El repositorio se divide en 4 carpetas:
 
 - `document`: Se encuentra el documento ProblemSet1 con los resultados obtenidos
 - `scripts`: contiene los scripts en donde se soluciona el Problem Set en R.
